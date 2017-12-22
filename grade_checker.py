@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Spyder Editor
-
-This is a temporary script file.
-"""
+#!/usr/bin/env python3
 
 import time
 from collections import namedtuple
@@ -13,7 +8,10 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support.ui import Select
 
-Course = namedtuple('Course', ['crn', 'subject', 'course', 'section', 'course_title', 'campus', 'final_grade', 'attempted', 'earned', 'gpa_hours', 'quality_points'])
+Course = namedtuple('Course',
+                    ['crn', 'subject', 'course', 'section', 'course_title',
+                     'campus', 'final_grade', 'attempted', 'earned',
+                     'gpa_hours', 'quality_points'])
 
 
 def create_browser():
@@ -69,14 +67,16 @@ def print_final_grades(classes):
     print("\n".join(["{subject}{course}-{section} {title}: {grade}".format(
         subject=course.subject, course=course.course, section=course.section,
         title=course.course_title, grade=course.final_grade) for course in
-                     classes]))
+        classes]))
 
 
 # TERM format
-    # CAMPUS: [YYYY][10|20|30] Where YYYY is the second year in the say 2017-2018 school year
-    # 10 = Fall; 20 = Winter; 30 = Summer
-    # For OL, it's 25?
-    # SO YYYY is the normal number except for fall where it belongs to the next year
+# CAMPUS: [YYYY][10|20|30] Where YYYY is the second year in the say 2017-2018
+# school year
+# 10 = Fall; 20 = Winter; 30 = Summer
+# For OL, it's 25?
+# SO YYYY is the normal number except for fall where it belongs to the next
+# year
 
 @click.command()
 @click.option('--username', prompt='Your Moodle/Network username')
