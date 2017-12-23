@@ -4,9 +4,9 @@ import time
 from collections import namedtuple
 
 import click
-from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support.ui import Select
+
+from utils import create_browser, mytru_login, sendgrid_send_email
 
 Course = namedtuple('Course',
                     ['crn', 'subject', 'course', 'section', 'course_title',
@@ -14,43 +14,23 @@ Course = namedtuple('Course',
                      'gpa_hours', 'quality_points'])
 
 
-def create_browser():
-    # Setup browser
-    options = Options()
-    options.add_argument('-headless')
-    browser = webdriver.Firefox(firefox_options=options)
-
-    return browser
-
-
-def mytru_login(browser, username, password):
-    # Log in to TRU
-    browser.get('http://trustudent.tru.ca')
-    browser.find_element_by_id('username').send_keys(username)
-    browser.find_element_by_id('password').send_keys(password)
-    browser.find_element_by_id('password').submit()
-
-    # Wait for all the slow redirects to work
-    time.sleep(5)
-
-
-def extract_final_grades(browser, term):
+def extract_final_grades(ctx, term):
     # Go to grades page
-    browser.get(
+    ctx.obj.browser.get(
         'https://banssbprod.tru.ca/ssomanager/c/SSB?pkg=bwskogrd.P_ViewTermGrde')
 
     # Select a term
-    term_selector = Select(browser.find_element_by_id('term_id'))
+    term_selector = Select(ctx.obj.browser.find_element_by_id('term_id'))
     terms = {option.get_attribute('value'): option for option in
              term_selector.options}
     if term in terms:
         term_selector.select_by_value(term)
 
-    browser.find_element_by_id('term_id').submit()
+    ctx.obj.browser.find_element_by_id('term_id').submit()
 
     time.sleep(5)
 
-    grades = browser.find_elements_by_class_name('datadisplaytable')[1]
+    grades = ctx.obj.browser.find_elements_by_class_name('datadisplaytable')[1]
 
     rows = grades.find_elements_by_tag_name('tr')[1:]
 
@@ -64,11 +44,17 @@ def extract_final_grades(browser, term):
 
 
 def print_final_grades(classes):
-    print("\n".join(["{subject}{course}-{section} {title}: {grade}".format(
+    click.echo("\n".join(["{subject}{course}-{section} {title}: {grade}".format(
         subject=course.subject, course=course.course, section=course.section,
         title=course.course_title, grade=course.final_grade) for course in
         classes]))
 
+
+def extract_moodle_grades(browser, course_id):
+    browser.get('https://moodle.tru.ca/grade/report/user/index.php?id='
+                '{}'.format(course_id))
+
+    rows = browser.find_element_by_tag_name('tr')
 
 # TERM format
 # CAMPUS: [YYYY][10|20|30] Where YYYY is the second year in the say 2017-2018
@@ -78,17 +64,50 @@ def print_final_grades(classes):
 # SO YYYY is the normal number except for fall where it belongs to the next
 # year
 
-@click.command()
+# @click.command()
+# @click.option('--term', prompt='The desired term, in the format "YYYY['
+#                                '10|20|25|30]"')
+# @click.option('--sendgrid-api-key')
+# @click.option('--email')
+# @click.option('--email-from')
+# def final_grades(username, password, term, sendgrid_api_key, email,
+#                  email_from):
+#     browser = create_browser()
+#     mytru_login(browser, username, password)
+#     classes = extract_final_grades(browser, term)
+#     print_final_grades(classes)
+#
+#     if email:
+#         sendgrid_send_email(sendgrid_api_key, email_from, )
+
+
+class State(object):
+    def __init__(self, username, password, debug=False):
+        self.username = username
+        self.password = password
+
+        self.browser = create_browser(debug=debug)
+
+
+@click.group()
 @click.option('--username', prompt='Your Moodle/Network username')
 @click.option('--password', prompt='Your Moodle/Network password')
-@click.option('--term', prompt='The desired term, in the format "YYYY['
-                               '10|20|25|30]"')
-def final_grades(username, password, term):
-    browser = create_browser()
-    mytru_login(browser, username, password)
-    classes = extract_final_grades(browser, term)
+@click.option('--debug/--no-debug', default=False)
+@click.pass_context
+def cli(ctx, username, password, debug):
+    ctx.obj = State(username, password, debug=debug)
+
+
+@cli.command()
+@click.option('--term', prompt='The term, in the format of YYYY[10|20|30]')
+@click.pass_context
+def finals(ctx, term):
+    mytru_login(ctx)
+
+    classes = extract_final_grades(ctx, term)
+
     print_final_grades(classes)
 
 
 if __name__ == '__main__':
-    final_grades()
+    cli()
