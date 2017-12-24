@@ -1,6 +1,26 @@
 # mytrucli
 **Important note:** this is an early work in progress, and is not really setup to work cross-platform yet. I'll write up better instructions soon(TM).
 
+## Ubuntu 16.04 Quickstart
+### Setup
+```bash
+# Clone Repo
+git clone https://github.com/marcolussetti/mytrucli.git
+cd mytrucli
+
+# Install requirements
+apt-get install firefox
+wget https://github.com/mozilla/geckodriver/releases/download/v0.19.1/geckodriver-v0.19.1-linux64.tar.gz
+tar -xvzf geckodriver-v0.19.1-linux64.tar.gz
+sudo mv geckodriver /usr/local/bin
+rm geckodriver-v0.19.1-linux64.tar.gz
+
+pip install --user pipenv
+~/.local/bin/pipenv --three install -r requirements.txt
+
+~/.local/bin/pipenv run python grade_checker.py --username T00XXXXXX --password XXXXXX final_grades --term 201810
+```
+
 ## Setup
 It needs firefox and geckodriver for now. Geckodriver needs to be in the path.
 
