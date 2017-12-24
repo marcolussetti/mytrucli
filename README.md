@@ -26,9 +26,11 @@ pip install --user pipenv
 
 ### Cronjob (as user)
 ```bash
-crontab -u USERNAME -e
+ls ~/.virtualenvs
+
+sudo vim /etc/crontab
 # This is to be appended then
-1,31 * * * * cd /home/USERNAME/mytrucli && /home/USERNAME/.local/bin/pipenv run python grade_checker.py --username T00XXXXXX --password XXXXX final_grades --term 201810 --email XXX@XXXX.com --sendgrid-api-key SG.XXXX > /tmp/mytrucli.log
+1,31 * * * * USERNAME cd /home/USERNAME/mytrucli && /home/USERNAME/.virtualenvs/mytru-SEEOUTPUTOFABOVE/python grade_checker.py --username T00XXXXXX --password XXXXX final_grades --term 201810 --email XXX@XXXX.com --sendgrid-api-key SG.XXXX > /tmp/mytrucli.log
 ```
 
 ## Setup
