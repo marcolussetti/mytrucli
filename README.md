@@ -17,8 +17,18 @@ rm geckodriver-v0.19.1-linux64.tar.gz
 
 pip install --user pipenv
 ~/.local/bin/pipenv --three install -r requirements.txt
+```
+### Execution
 
+```bash
 ~/.local/bin/pipenv run python grade_checker.py --username T00XXXXXX --password XXXXXX final_grades --term 201810
+```
+
+### Cronjob (as user)
+```bash
+crontab -u USERNAME -e
+# This is to be appended then
+1,31 * * * * cd /home/USERNAME/mytrucli && /home/USERNAME/.local/bin/pipenv run python grade_checker.py --username T00XXXXXX --password XXXXX final_grades --term 201810 --email XXX@XXXX.com --sendgrid-api-key SG.XXXX > /tmp/mytrucli.log
 ```
 
 ## Setup
