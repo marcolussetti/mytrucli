@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import logging
 import time
 from collections import namedtuple
 
@@ -17,7 +17,8 @@ Course = namedtuple('Course',
 def extract_final_grades(ctx, term):
     # Go to grades page
     ctx.obj.browser.get(
-        'https://banssbprod.tru.ca/ssomanager/c/SSB?pkg=bwskogrd.P_ViewTermGrde')
+        'https://banssbprod.tru.ca/ssomanager/c/SSB?pkg=bwskogrd'
+        '.P_ViewTermGrde')
 
     # Select a term
     term_selector = Select(ctx.obj.browser.find_element_by_id('term_id'))
@@ -43,11 +44,11 @@ def extract_final_grades(ctx, term):
     return classes
 
 
-def print_final_grades(classes):
-    click.echo("\n".join(["{subject}{course}-{section} {title}: {grade}".format(
+def format_final_grades(classes):
+    return "\n".join(["{subject}{course}-{section} {title}: {grade}".format(
         subject=course.subject, course=course.course, section=course.section,
         title=course.course_title, grade=course.final_grade) for course in
-        classes]))
+        classes])
 
 
 def extract_moodle_grades(browser, course_id):
@@ -55,6 +56,7 @@ def extract_moodle_grades(browser, course_id):
                 '{}'.format(course_id))
 
     rows = browser.find_element_by_tag_name('tr')
+
 
 # TERM format
 # CAMPUS: [YYYY][10|20|30] Where YYYY is the second year in the say 2017-2018
@@ -100,13 +102,32 @@ def cli(ctx, username, password, debug):
 
 @cli.command()
 @click.option('--term', prompt='The term, in the format of YYYY[10|20|30]')
+@click.option('--email')
+@click.option('--sendgrid-api-key')
+@click.option('--sender', default='noreply@mytrucli.marcolussetti.com')
 @click.pass_context
-def finals(ctx, term):
+def final_grades(ctx, term, email, sendgrid_api_key, sender):
     mytru_login(ctx)
 
     classes = extract_final_grades(ctx, term)
 
-    print_final_grades(classes)
+    if email:
+        # Email mode detected
+        if not sendgrid_api_key:
+            logging.error("No api key provided for SendGrid! Please specify "
+                          "a --sendgrid-api-key")
+            return 1
+
+        if True:
+            # Check for changes
+            response = sendgrid_send_email(sendgrid_api_key,
+                                           sender,
+                                           email,
+                                           "mytruCLI: Changes in Final "
+                                           "Grades detected",
+                                           format_final_grades(classes))
+
+    click.echo(format_final_grades(classes))
 
 
 if __name__ == '__main__':

@@ -1,9 +1,14 @@
+import json
+import os
 import time
 
 import sendgrid
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from sendgrid.helpers.mail import *
+
+
+CONFIG_DIR = os.path.join(os.path.expanduser('~'), '.mytrucli')
 
 
 def create_browser(debug=False):
@@ -48,3 +53,24 @@ def sendgrid_send_email(api_key, from_email, to_email, subject, content):
     )
 
     return sg.client.mail.send.post(request_body=mail.get())
+
+
+def read_json(file_name):
+    file_path = os.path.join(CONFIG_DIR, "{}.json".format(file_name))
+    if os.path.isfile(file_path):
+        with open(file_path) as f:
+            return json.load(f)
+    else:
+        return None
+
+
+def write_json(file_name, data):
+    file_path = os.path.join(CONFIG_DIR, "{}.json".format(file_name))
+    if not os.path.isdir(CONFIG_DIR):
+        os.makedirs(CONFIG_DIR)
+
+    with open(file_path, 'w') as f:
+        json.dump(data, f)
+
+
+#def compare_json():
