@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
+import json
 import logging
 import time
 from collections import namedtuple
 
 import click
+import jsondiff as jsondiff
 from selenium.webdriver.support.ui import Select
 
-from utils import create_browser, mytru_login, sendgrid_send_email
+from utils import create_browser, mytru_login, sendgrid_send_email, \
+    read_json, write_json
 
 Course = namedtuple('Course',
                     ['crn', 'subject', 'course', 'section', 'course_title',
@@ -118,16 +121,25 @@ def final_grades(ctx, term, email, sendgrid_api_key, sender):
                           "a --sendgrid-api-key")
             return 1
 
-        if True:
-            # Check for changes
+        old = read_json('final_grades')
+        diff = jsondiff.diff(old, json.loads(json.dumps(classes)))
+
+        if diff:
+            write_json('final_grades', classes)
             response = sendgrid_send_email(sendgrid_api_key,
                                            sender,
                                            email,
-                                           "mytruCLI: Changes in Final "
-                                           "Grades detected",
-                                           format_final_grades(classes))
-
-    click.echo(format_final_grades(classes))
+                                           'mytruCLI: Changes in Final '
+                                           'Grades detected',
+                                           "Current results:\n {}\n\n "
+                                           "Difference:\n {}".format(
+                                               format_final_grades(classes),
+                                               diff
+                                           ))
+            click.echo("Changes detected! Current standings:\n{}".format(
+                format_final_grades(classes)))
+        else:
+            click.echo('No changes detected.')
 
 
 if __name__ == '__main__':
