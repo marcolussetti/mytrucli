@@ -33,18 +33,22 @@ sudo vim /etc/crontab
 1,31 * * * * USERNAME cd /home/USERNAME/mytrucli && /home/USERNAME/.virtualenvs/mytru-SEEOUTPUTOFABOVE/python grade_checker.py --username T00XXXXXX --password XXXXX final_grades --term 201810 --email XXX@XXXX.com --sendgrid-api-key SG.XXXX > /tmp/mytrucli.log
 ```
 
-## Setup
+## Arch
+### Setup
 It needs firefox and geckodriver for now. Geckodriver needs to be in the path.
 
 ```bash
-pacaur -S geckodriver
+sudo pacman -S firefox
+pacaur -S geckodriver  # Or whatever AUR helper you use
 ```
+
+Make virtualenv in whatever way you want and activate (pipenv, mkvirtualenv, etc.)
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Execution
+### Execution
 To check final grades for Fall 2018
 ```bash
 python3 grade_checker.py --username T00XXXXXX --password XXXXXX final_grades --term 201810
