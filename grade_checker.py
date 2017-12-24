@@ -114,18 +114,21 @@ def final_grades(ctx, term, email, sendgrid_api_key, sender):
 
     classes = extract_final_grades(ctx, term)
 
-    if email:
-        # Email mode detected
-        if not sendgrid_api_key:
-            logging.error("No api key provided for SendGrid! Please specify "
-                          "a --sendgrid-api-key")
-            return 1
+    old = read_json('final_grades')
+    diff = jsondiff.diff(old, json.loads(json.dumps(classes)))
 
-        old = read_json('final_grades')
-        diff = jsondiff.diff(old, json.loads(json.dumps(classes)))
+    if diff:
+        write_json('final_grades', classes)
+        click.echo("Changes detected! Current standings:\n{}".format(
+            format_final_grades(classes)))
 
-        if diff:
-            write_json('final_grades', classes)
+        if email:
+            # Email mode detected
+            if not sendgrid_api_key:
+                logging.error(
+                    "No api key provided for SendGrid! Please specify "
+                    "a --sendgrid-api-key")
+                return 1
             response = sendgrid_send_email(sendgrid_api_key,
                                            sender,
                                            email,
@@ -133,13 +136,12 @@ def final_grades(ctx, term, email, sendgrid_api_key, sender):
                                            'Grades detected',
                                            "Current results:\n {}\n\n "
                                            "Difference:\n {}".format(
-                                               format_final_grades(classes),
+                                               format_final_grades(
+                                                   classes),
                                                diff
                                            ))
-            click.echo("Changes detected! Current standings:\n{}".format(
-                format_final_grades(classes)))
-        else:
-            click.echo('No changes detected.')
+    else:
+        click.echo('No changes detected.')
 
 
 if __name__ == '__main__':
