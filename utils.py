@@ -33,12 +33,12 @@ def mytru_login(ctx):
     time.sleep(5)
 
 
-def moodle_login(browser, username, password):
+def moodle_login(ctx):
     # Log in to Moodle
-    browser.get('https://moodle.tru.ca')
-    browser.find_element_by_id('username').send_keys(username)
-    browser.find_element_by_id('password').send_keys(password)
-    browser.find_element_by_id('password').submit()
+    ctx.obj.browser.get('https://moodle.tru.ca')
+    ctx.obj.browser.find_element_by_id('username').send_keys(ctx.obj.username)
+    ctx.obj.browser.find_element_by_id('password').send_keys(ctx.obj.password)
+    ctx.obj.browser.find_element_by_id('password').submit()
 
     time.sleep(5)
 

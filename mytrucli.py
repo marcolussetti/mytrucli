@@ -1,64 +1,15 @@
 #!/usr/bin/env python3
 import json
 import logging
-import time
-from collections import namedtuple
 
 import click
 import jsondiff as jsondiff
-from selenium.webdriver.support.ui import Select
+from tabulate import tabulate
 
-from utils import create_browser, mytru_login, sendgrid_send_email, \
-    read_json, write_json
-
-Course = namedtuple('Course',
-                    ['crn', 'subject', 'course', 'section', 'course_title',
-                     'campus', 'final_grade', 'attempted', 'earned',
-                     'gpa_hours', 'quality_points'])
-
-
-def extract_final_grades(ctx, term):
-    # Go to grades page
-    ctx.obj.browser.get(
-        'https://banssbprod.tru.ca/ssomanager/c/SSB?pkg=bwskogrd'
-        '.P_ViewTermGrde')
-
-    # Select a term
-    term_selector = Select(ctx.obj.browser.find_element_by_id('term_id'))
-    terms = {option.get_attribute('value'): option for option in
-             term_selector.options}
-    if term in terms:
-        term_selector.select_by_value(term)
-
-    ctx.obj.browser.find_element_by_id('term_id').submit()
-
-    time.sleep(5)
-
-    grades = ctx.obj.browser.find_elements_by_class_name('datadisplaytable')[1]
-
-    rows = grades.find_elements_by_tag_name('tr')[1:]
-
-    classes = []
-
-    for row in rows:
-        classes.append(Course(
-            *[el.text for el in row.find_elements_by_class_name('dddefault')]))
-
-    return classes
-
-
-def format_final_grades(classes):
-    return "\n".join(["{subject}{course}-{section} {title}: {grade}".format(
-        subject=course.subject, course=course.course, section=course.section,
-        title=course.course_title, grade=course.final_grade) for course in
-        classes])
-
-
-def extract_moodle_grades(browser, course_id):
-    browser.get('https://moodle.tru.ca/grade/report/user/index.php?id='
-                '{}'.format(course_id))
-
-    rows = browser.find_element_by_tag_name('tr')
+import final_grades
+import moodle_grades
+from utils import create_browser, mytru_login, sendgrid_send_email, read_json,\
+    write_json, moodle_login
 
 
 # TERM format
@@ -112,7 +63,7 @@ def cli(ctx, username, password, debug):
 def final_grades(ctx, term, email, sendgrid_api_key, sender):
     mytru_login(ctx)
 
-    classes = extract_final_grades(ctx, term)
+    classes = final_grades.extract_final_grades(ctx, term)
 
     old = read_json('final_grades')
     diff = jsondiff.diff(old, json.loads(json.dumps(classes)))
@@ -120,7 +71,7 @@ def final_grades(ctx, term, email, sendgrid_api_key, sender):
     if diff:
         write_json('final_grades', classes)
         click.echo("Changes detected! Current standings:\n{}".format(
-            format_final_grades(classes)))
+            final_grades.format_final_grades(classes)))
 
         if email:
             # Email mode detected
@@ -129,19 +80,29 @@ def final_grades(ctx, term, email, sendgrid_api_key, sender):
                     "No api key provided for SendGrid! Please specify "
                     "a --sendgrid-api-key")
                 return 1
-            response = sendgrid_send_email(sendgrid_api_key,
-                                           sender,
-                                           email,
-                                           'mytruCLI: Changes in Final '
-                                           'Grades detected',
-                                           "Current results:\n {}\n\n "
-                                           "Difference:\n {}".format(
-                                               format_final_grades(
-                                                   classes),
-                                               diff
-                                           ))
+            response = sendgrid_send_email(
+                sendgrid_api_key,
+                sender,
+                email,
+                'mytruCLI: Changes in Final Grades detected',
+                "Current results:\n {}\n\n Difference:\n {}".format(
+                    final_grades.format_final_grades(classes), diff))
     else:
         click.echo('No changes detected.')
+
+
+@cli.command()
+@click.option('--course', prompt='Course number, as in the moodle id')
+@click.pass_context
+def moodle_grades(ctx, course):
+    moodle_login(ctx)
+
+    headers, grades = moodle_grades.extract_moodle_grades(ctx, course)
+
+    # text = "\n".join([" | ".join(row) for row in grades])
+    text = tabulate(grades, headers=headers)
+
+    click.echo(text)
 
 
 if __name__ == '__main__':
