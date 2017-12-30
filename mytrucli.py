@@ -6,10 +6,10 @@ import click
 import jsondiff as jsondiff
 from tabulate import tabulate
 
-import final_grades
+import mytru_grades
 import moodle_grades
-from utils import create_browser, mytru_login, sendgrid_send_email, read_json,\
-    write_json, moodle_login
+from utils import create_browser, mytru_login, sendgrid_send_email, read_json, \
+    write_json, moodle_login, end
 
 
 # TERM format
@@ -38,9 +38,12 @@ from utils import create_browser, mytru_login, sendgrid_send_email, read_json,\
 
 
 class State(object):
-    def __init__(self, username, password, debug=False):
+    def __init__(self, username, password, sendgrid_api_key=None,
+                 sender=None, debug=False):
         self.username = username
         self.password = password
+        self.sendgrid_api_key = sendgrid_api_key
+        self.sender = sender
 
         self.browser = create_browser(debug=debug)
 
@@ -48,22 +51,24 @@ class State(object):
 @click.group()
 @click.option('--username', prompt='Your Moodle/Network username')
 @click.option('--password', prompt='Your Moodle/Network password')
+@click.option('--sendgrid-api-key', default=None)
+@click.option('--sender', default='noreply@mytrucli.marcolussetti.com')
 @click.option('--debug/--no-debug', default=False)
 @click.pass_context
-def cli(ctx, username, password, debug):
-    ctx.obj = State(username, password, debug=debug)
+def cli(ctx, username, password, sendgrid_api_key, sender, debug):
+    ctx.obj = State(
+        username, password,
+        sendgrid_api_key=sendgrid_api_key, sender=sender, debug=debug)
 
 
 @cli.command()
 @click.option('--term', prompt='The term, in the format of YYYY[10|20|30]')
-@click.option('--email')
-@click.option('--sendgrid-api-key')
-@click.option('--sender', default='noreply@mytrucli.marcolussetti.com')
+@click.option('--email', default=None)
 @click.pass_context
-def final_grades(ctx, term, email, sendgrid_api_key, sender):
+def final_grades(ctx, term, email):
     mytru_login(ctx)
 
-    classes = final_grades.extract_final_grades(ctx, term)
+    classes = mytru_grades.extract_final_grades(ctx, term)
 
     old = read_json('final_grades')
     diff = jsondiff.diff(old, json.loads(json.dumps(classes)))
@@ -71,30 +76,33 @@ def final_grades(ctx, term, email, sendgrid_api_key, sender):
     if diff:
         write_json('final_grades', classes)
         click.echo("Changes detected! Current standings:\n{}".format(
-            final_grades.format_final_grades(classes)))
+            mytru_grades.format_final_grades(classes)))
 
         if email:
             # Email mode detected
-            if not sendgrid_api_key:
+            if not ctx.obj.sendgrid_api_key:
                 logging.error(
                     "No api key provided for SendGrid! Please specify "
                     "a --sendgrid-api-key")
-                return 1
+                end(ctx, status=1)
             response = sendgrid_send_email(
-                sendgrid_api_key,
-                sender,
+                ctx.obj.sendgrid_api_key,
+                ctx.obj.sender,
                 email,
                 'mytruCLI: Changes in Final Grades detected',
                 "Current results:\n {}\n\n Difference:\n {}".format(
-                    final_grades.format_final_grades(classes), diff))
+                    mytru_grades.format_final_grades(classes), diff))
     else:
         click.echo('No changes detected.')
+
+    end(ctx, status=0)
 
 
 @cli.command()
 @click.option('--course', prompt='Course number, as in the moodle id')
+@click.option('--email', default=None)
 @click.pass_context
-def moodle_grades(ctx, course):
+def moodle_grades(ctx, course, email):
     moodle_login(ctx)
 
     headers, grades = moodle_grades.extract_moodle_grades(ctx, course)
@@ -103,6 +111,8 @@ def moodle_grades(ctx, course):
     text = tabulate(grades, headers=headers)
 
     click.echo(text)
+
+    end(ctx, status=0)
 
 
 if __name__ == '__main__':

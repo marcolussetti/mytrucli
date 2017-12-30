@@ -21,7 +21,6 @@ def create_browser(debug=False):
     return browser
 
 
-#def mytru_login(browser, username, password):
 def mytru_login(ctx):
     # Log in to TRU
     ctx.obj.browser.get('http://trustudent.tru.ca')
@@ -73,4 +72,10 @@ def write_json(file_name, data):
         json.dump(data, f)
 
 
-#def compare_json():
+def end(ctx, status=0):
+    if ctx.obj.browser:
+        ctx.obj.browser.quit()
+    return status
+
+
+# def compare_json():
