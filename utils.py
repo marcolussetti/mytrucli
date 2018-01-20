@@ -21,27 +21,6 @@ def create_browser(debug=False):
     return browser
 
 
-def mytru_login(ctx):
-    # Log in to TRU
-    ctx.obj.browser.get('http://trustudent.tru.ca')
-    ctx.obj.browser.find_element_by_id('username').send_keys(ctx.obj.username)
-    ctx.obj.browser.find_element_by_id('password').send_keys(ctx.obj.password)
-    ctx.obj.browser.find_element_by_id('password').submit()
-
-    # Wait for all the slow redirects to work
-    time.sleep(5)
-
-
-def moodle_login(ctx):
-    # Log in to Moodle
-    ctx.obj.browser.get('https://moodle.tru.ca')
-    ctx.obj.browser.find_element_by_id('username').send_keys(ctx.obj.username)
-    ctx.obj.browser.find_element_by_id('password').send_keys(ctx.obj.password)
-    ctx.obj.browser.find_element_by_id('password').submit()
-
-    time.sleep(5)
-
-
 def sendgrid_send_email(api_key, from_email, to_email, subject, content):
     sg = sendgrid.SendGridAPIClient(apikey=api_key)
     mail = Mail(

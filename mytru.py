@@ -9,6 +9,17 @@ Course = namedtuple('Course',
                      'gpa_hours', 'quality_points'])
 
 
+def login(ctx):
+    # Log in to TRU
+    ctx.obj.browser.get('http://trustudent.tru.ca')
+    ctx.obj.browser.find_element_by_id('username').send_keys(ctx.obj.username)
+    ctx.obj.browser.find_element_by_id('password').send_keys(ctx.obj.password)
+    ctx.obj.browser.find_element_by_id('password').submit()
+
+    # Wait for all the slow redirects to work
+    time.sleep(5)
+
+
 def extract_final_grades(ctx, term):
     # Go to grades page
     ctx.obj.browser.get(
