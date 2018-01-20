@@ -1,4 +1,11 @@
+import re
 import time
+from collections import namedtuple
+
+import dateparser as dateparser
+
+Assignment = namedtuple('Assignment',
+                    ['id', 'title', 'url', 'due_date', 'grade'])
 
 
 def login(ctx):
@@ -74,9 +81,36 @@ def extract_assignments(ctx, course_id):
         if len(row.find_elements_by_tag_name('td')) > 1:
             # Grade row
             output.append(
-                [el.text for el in row.find_elements_by_tag_name('td')]
+                [el for el in row.find_elements_by_tag_name('td')]
             )
-        else:
-            output.append([row.text])
 
-    return headers, output
+    records = []
+
+    for row in output:
+        record = {}
+        if headers.index('Assignments'):
+            record['title'] = row[headers.index('Assignments')].text.strip()
+            record['url'] = row[headers.index('Assignments')].find_element_by_tag_name('a').get_attribute('href')
+            record['id'] = re.search("([0-9]+)", record['url']).groups()[0]
+        else:
+            continue
+
+        if headers.index('Due date') and row[headers.index('Due '
+                                                           'date')].text.strip():
+            record['due_date'] = dateparser.parse(row[headers.index('Due '
+                                                                   'date')].text,
+                                           settings={'TIMEZONE':
+                                                         'America/Vancouver'})
+        else:
+            record['due_date'] = None
+
+        if headers.index('Grade'):
+            record['grade'] = row[headers.index('Grade')].text
+        else:
+            record['grade'] = None
+
+        records.append(Assignment(**record))
+
+    headers = Assignment._fields
+
+    return headers, records
