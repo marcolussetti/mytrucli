@@ -5,7 +5,7 @@ from collections import namedtuple
 import dateparser as dateparser
 
 Assignment = namedtuple('Assignment',
-                    ['id', 'title', 'url', 'due_date', 'grade'])
+                        ['id', 'title', 'url', 'due_date', 'grade'])
 
 
 def login(ctx):
@@ -90,17 +90,18 @@ def extract_assignments(ctx, course_id):
         record = {}
         if headers.index('Assignments'):
             record['title'] = row[headers.index('Assignments')].text.strip()
-            record['url'] = row[headers.index('Assignments')].find_element_by_tag_name('a').get_attribute('href')
+            record['url'] = row[
+                headers.index('Assignments')].find_element_by_tag_name(
+                'a').get_attribute('href')
             record['id'] = re.search("([0-9]+)", record['url']).groups()[0]
         else:
             continue
 
-        if headers.index('Due date') and row[headers.index('Due '
-                                                           'date')].text.strip():
-            record['due_date'] = dateparser.parse(row[headers.index('Due '
-                                                                   'date')].text,
-                                           settings={'TIMEZONE':
-                                                         'America/Vancouver'})
+        if headers.index('Due date') and row[headers.index(
+                'Due ' 'date')].text.strip():
+            record['due_date'] = dateparser.parse(
+                row[headers.index('Due date')].text,
+                settings={'TIMEZONE': 'America/Vancouver'})
         else:
             record['due_date'] = None
 
