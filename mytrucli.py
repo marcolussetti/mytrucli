@@ -107,10 +107,35 @@ def moodle_grades(ctx, course):
 
     headers, grades = moodle.extract_grades(ctx, course)
 
-    # text = "\n".join([" | ".join(row) for row in grades])
-    text = tabulate(grades, headers=headers)
+    old = read_json('moodle_grades_{}'.format(course))
+    diff = jsondiff.diff(old, json.loads(json.dumps(grades)))
 
-    click.echo(text)
+    if diff:
+        write_json('moodle_grades_{}'.format(course), grades)
+        click.echo("Changes detected! Current standings:\n{}".format(
+            tabulate(grades, headers=headers)))
+
+        if ctx.obj.email:
+            # Email mode detected
+            if not ctx.obj.sendgrid_api_key:
+                logging.error(
+                    "No api key provided for SendGrid! Please specify "
+                    "a --sendgrid-api-key")
+                end(ctx, status=1)
+            response = sendgrid_send_email(
+                ctx.obj.sendgrid_api_key,
+                ctx.obj.sender,
+                ctx.obj.email,
+                'mytruCLI: Changes in Moodle Grades detected for class {'
+                '}'.format(course),
+                "Current results:\n {}\n\n Difference:\n {}".format(
+                    tabulate(grades, headers=headers), diff))
+    else:
+        click.echo('No changes detected.')
+    # text = "\n".join([" | ".join(row) for row in grades])
+    # text = tabulate(grades, headers=headers)
+    #
+    # click.echo(text)
 
     end(ctx, status=0)
 

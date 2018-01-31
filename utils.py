@@ -3,6 +3,7 @@ import os
 import time
 
 import sendgrid
+from ics import Calendar, Event
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from sendgrid.helpers.mail import *
@@ -57,4 +58,23 @@ def end(ctx, status=0):
     return status
 
 
-# def compare_json():
+def generate_event(title, start_date, end_date, description=None,
+                  location=None):
+    e = Event()
+    e.name = title
+    e.begin = start_date
+    e.end = end_date
+    if description:
+        e.description = description
+    if location:
+        e.location = location
+
+    return e
+
+
+def generate_calendar(events):
+    c = Calendar()
+    for event in events:
+        c.events.append(event)
+
+    return c
