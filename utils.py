@@ -28,7 +28,7 @@ def sendgrid_send_email(api_key, from_email, to_email, subject, content):
         Email(from_email),
         subject,
         Email(to_email),
-        Content("text/plain", content)
+        Content("text/html", content)
     )
 
     return sg.client.mail.send.post(request_body=mail.get())

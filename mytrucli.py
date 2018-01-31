@@ -117,6 +117,37 @@ def moodle_grades(ctx, course):
 
         if ctx.obj.email:
             # Email mode detected
+
+            # Craft email
+            text = """
+            Dear user,
+            Changes have been detected in your grades for course {course}.
+
+            Here are your current grades:
+            {table}
+
+            Regards,
+            myTruCLI
+            """
+            html = """
+            <html><body><p>Dear user,</p>
+            <p>Changes have been detected in your grades for course {course}.</p>
+            <p>Here are your current grades:</p>
+            {table}
+            <p>Regards,</p>
+            <p>myTruCLI</p>
+            </body></html>
+            """
+
+            text = text.format(
+                course=course,
+                table=tabulate(grades, headers=headers, tablefmt='grid'))
+            html = html.format(
+                course=course,
+                table=tabulate(grades, headers=headers, tablefmt='html')
+            )
+
+            # Send email
             if not ctx.obj.sendgrid_api_key:
                 logging.error(
                     "No api key provided for SendGrid! Please specify "
@@ -128,8 +159,7 @@ def moodle_grades(ctx, course):
                 ctx.obj.email,
                 'mytruCLI: Changes in Moodle Grades detected for class {'
                 '}'.format(course),
-                "Current results:\n {}\n\n Difference:\n {}".format(
-                    tabulate(grades, headers=headers), diff))
+                html)
     else:
         click.echo('No changes detected.')
     # text = "\n".join([" | ".join(row) for row in grades])
