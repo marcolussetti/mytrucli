@@ -18,6 +18,7 @@ def create_browser(debug=False):
     if not debug:
         options.add_argument('-headless')
     browser = webdriver.Firefox(firefox_options=options)
+    browser.implicitly_wait(30) # Wait for up to 30 seconds before erring out
 
     return browser
 
