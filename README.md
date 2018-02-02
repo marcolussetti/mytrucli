@@ -112,3 +112,13 @@ To console:
 XXXXXX 
 moodle_assignments --course 7400
 ```
+
+### Cronjob issues
+Exceptions and Errors in Selenium are not yet handle (beyond the 30s wait time), so if Selenium crashes on a cronjob you have Firefox instances piling up.
+
+As a very dirty cleanup job on a server where firefox is not used for anything else, you can use:
+```bash
+sudo vim /etc/crontab
+# This is to be appended then
+*/15 * * * * USERNAME pkill firefox
+```
