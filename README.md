@@ -120,5 +120,5 @@ As a very dirty cleanup job on a server where firefox is not used for anything e
 ```bash
 sudo vim /etc/crontab
 # This is to be appended then
-*/15 * * * * USERNAME pkill firefox
+3,18,33,48 * * * * USERNAME pkill firefox
 ```
