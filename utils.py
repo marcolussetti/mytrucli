@@ -3,6 +3,7 @@ import os
 import time
 
 import sendgrid
+from ics import Calendar, Event
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from sendgrid.helpers.mail import *
@@ -17,29 +18,9 @@ def create_browser(debug=False):
     if not debug:
         options.add_argument('-headless')
     browser = webdriver.Firefox(firefox_options=options)
+    browser.implicitly_wait(30) # Wait for up to 30 seconds before erring out
 
     return browser
-
-
-def mytru_login(ctx):
-    # Log in to TRU
-    ctx.obj.browser.get('http://trustudent.tru.ca')
-    ctx.obj.browser.find_element_by_id('username').send_keys(ctx.obj.username)
-    ctx.obj.browser.find_element_by_id('password').send_keys(ctx.obj.password)
-    ctx.obj.browser.find_element_by_id('password').submit()
-
-    # Wait for all the slow redirects to work
-    time.sleep(5)
-
-
-def moodle_login(ctx):
-    # Log in to Moodle
-    ctx.obj.browser.get('https://moodle.tru.ca')
-    ctx.obj.browser.find_element_by_id('username').send_keys(ctx.obj.username)
-    ctx.obj.browser.find_element_by_id('password').send_keys(ctx.obj.password)
-    ctx.obj.browser.find_element_by_id('password').submit()
-
-    time.sleep(5)
 
 
 def sendgrid_send_email(api_key, from_email, to_email, subject, content):
@@ -48,7 +29,7 @@ def sendgrid_send_email(api_key, from_email, to_email, subject, content):
         Email(from_email),
         subject,
         Email(to_email),
-        Content("text/plain", content)
+        Content("text/html", content)
     )
 
     return sg.client.mail.send.post(request_body=mail.get())
@@ -78,4 +59,23 @@ def end(ctx, status=0):
     return status
 
 
-# def compare_json():
+def generate_event(title, start_date, end_date, description=None,
+                  location=None):
+    e = Event()
+    e.name = title
+    e.begin = start_date
+    e.end = end_date
+    if description:
+        e.description = description
+    if location:
+        e.location = location
+
+    return e
+
+
+def generate_calendar(events):
+    c = Calendar()
+    for event in events:
+        c.events.append(event)
+
+    return c
