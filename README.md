@@ -1,15 +1,16 @@
 # mytrucli
 **Important note:** this is an early work in progress, and is not really setup to work cross-platform yet. I'll write up better instructions soon(TM).
 
-## Ubuntu 16.04 Quickstart
+## Quickstart
 ### Setup
+#### Ubuntu 16.04
 ```bash
 # Clone Repo
 git clone https://github.com/marcolussetti/mytrucli.git
 cd mytrucli
 
 # Install requirements
-apt-get install firefox
+sudo apt-get install firefox
 wget https://github.com/mozilla/geckodriver/releases/download/v0.19.1/geckodriver-v0.19.1-linux64.tar.gz
 tar -xvzf geckodriver-v0.19.1-linux64.tar.gz
 sudo mv geckodriver /usr/local/bin
@@ -18,43 +19,96 @@ rm geckodriver-v0.19.1-linux64.tar.gz
 pip install --user pipenv
 ~/.local/bin/pipenv --three install -r requirements.txt
 ```
-### Execution
+
+#### Arch Linux
 
 ```bash
-~/.local/bin/pipenv run python grade_checker.py --username T00XXXXXX --password XXXXXX final_grades --term 201810
+git clone https://github.com/marcolussetti/mytrucli.git
+cd mytrucli
+
+sudo pacman -S firefox
+pacaur -S geckodriver  # Or whatever AUR helper you use
+
+pip install --user pipenv
+~/.local/bin/pipenv --three install -r requirements.txt
 ```
 
-### Cronjob (as user)
+
+### Execution
+
+#### Final Grades Checker
+
+To console:
+
+```bash
+~/.local/bin/pipenv run python mytrucli.py --username T00XXXXXX --password 
+XXXXXX 
+final_grades --term 201810
+```
+
+To email:
+
+```bash
+~/.local/bin/pipenv run python mytrucli.py --username T00XXXXXX --password 
+XXXXXX --email XXX@XXXX.com --sendgrid-api-key SG.XXXXX final_grades --term 
+201810
+```
+
+As a cronjob (every 15 minutes):
+
 ```bash
 ls ~/.virtualenvs
 
 sudo vim /etc/crontab
 # This is to be appended then
-1,31 * * * * USERNAME cd /home/USERNAME/mytrucli && /home/USERNAME/.virtualenvs/mytru-SEEOUTPUTOFABOVE/python grade_checker.py --username T00XXXXXX --password XXXXX final_grades --term 201810 --email XXX@XXXX.com --sendgrid-api-key SG.XXXX > /tmp/mytrucli.log
+*/15 * * * * USERNAME cd /home/USERNAME/mytrucli && /home/USERNAME/
+.virtualenvs/mytru-SEEOUTPUTOFABOVE/python mytrucli.py --username T00XXXXXX --password 
+XXXXXX --email XXX@XXXX.com --sendgrid-api-key SG.XXXXX final_grades --term 
+201810 &>> /tmp/mytrucli.log
 ```
 
-## Arch
-### Setup
-It needs firefox and geckodriver for now. Geckodriver needs to be in the path.
+#### Moodle Grades Checker
+
+The `course` parameter refers to the Moodle ID for that course.
+
+To console:
 
 ```bash
-sudo pacman -S firefox
-pacaur -S geckodriver  # Or whatever AUR helper you use
+~/.local/bin/pipenv run python mytrucli.py --username T00XXXXXX --password 
+XXXXXX 
+moodle_grades --course 7400
 ```
 
-Make virtualenv in whatever way you want and activate (pipenv, mkvirtualenv, etc.)
+To email:
 
 ```bash
-pip install -r requirements.txt
+~/.local/bin/pipenv run python mytrucli.py --username T00XXXXXX --password 
+XXXXXX --email XXX@XXXX.com --sendgrid-api-key SG.XXXXX moodle_grades --course 
+7400
 ```
 
-### Execution
-To check final grades for Fall 2018
+
+As a cronjob (every 15 minutes):
+
 ```bash
-python3 grade_checker.py --username T00XXXXXX --password XXXXXX final_grades --term 201810
+ls ~/.virtualenvs
+
+sudo vim /etc/crontab
+# This is to be appended then
+*/15 * * * * USERNAME cd /home/USERNAME/mytrucli && /home/USERNAME/
+.virtualenvs/mytru-SEEOUTPUTOFABOVE/python mytrucli.py --username T00XXXXXX --password 
+XXXXXX --email XXX@XXXX.com --sendgrid-api-key SG.XXXXX moodle_grades --course 
+7400 &>> /tmp/mytrucli.log
 ```
 
-To check and get an email if any differences are detected
+#### Moodle Assignments Checker
+
+The `course` parameter refers to the Moodle ID for that course.
+
+To console:
+
 ```bash
-python grade_checker.py --username T00XXXXXX --password XXX final_grades --term 201810 --email XXX@XXXX.com --sendgrid-api-key SG.XXXXX
+~/.local/bin/pipenv run python mytrucli.py --username T00XXXXXX --password 
+XXXXXX 
+moodle_assignments --course 7400
 ```
