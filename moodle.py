@@ -44,10 +44,16 @@ def extract_grades(ctx, course_id):
     for row in rows[1:]:
         if len(row.find_elements_by_tag_name('td')) > 1:
             # Grade row
-            output.append(
-                [row.find_element_by_tag_name('th').text] +
-                [el.text for el in row.find_elements_by_tag_name('td')]
-            )
+            if len(row.find_element_by_tag_name('th') >= 0:
+                output.append(
+                    [row.find_element_by_tag_name('th').text] +
+                    [el.text for el in row.find_elements_by_tag_name('td')]
+                )
+            else:
+                output.append(
+                    [''] +
+                    [el.text for el in row.find_elements_by_tag_name('td')]
+                )
         else:
             output.append([row.text])
 
